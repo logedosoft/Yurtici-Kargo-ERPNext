@@ -1,5 +1,5 @@
 app_name = "yurtici_kargo_erpnext"
-app_title = "Yurtici Kargo Erpnext"
+app_title = "Yurtici Kargo ERPNext"
 app_publisher = "Logedosoft Business Solutions"
 app_description = "ERPNext - Yurtiçi Kargo entegrasyon projesi. Etiket basılabilir ve takibi yapılır. E-Ticaret siteleri ve mağaza satışları için uygundur."
 app_email = "info@logedosoft.com"
