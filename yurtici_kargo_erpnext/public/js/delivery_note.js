@@ -15,7 +15,7 @@ frappe.ui.form.on("Delivery Note", {
 				"/printview?"
 				+ "doctype=" + encodeURIComponent(frm.doctype)
 				+ "&name=" + encodeURIComponent(frm.docname)
-				+ "&format=" + encodeURIComponent("Yurtiçi Kargo Etiketi")
+				+ "&format=" + encodeURIComponent("Yurtiçi Kargo İrsaliye Etiketi")
 				+ "&no_letterhead=1"
 				+ "&trigger_print=1"
 				+ "&lang=tr"
