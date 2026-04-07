@@ -5,7 +5,19 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "prevent_delivery_note_submission_without_printing_label"
+  "login_info_section",
+  "api_user_name",
+  "api_password",
+  "customer_code",
+  "branch_code",
+  "web_service_url",
+  "column_break_hjwd",
+  "user_language",
+  "test_connection",
+  "section_break_cqpq",
+  "prevent_delivery_note_submission_without_printing_label",
+  "create_shipment_for_each_delivery_note",
+  "create_shipment_condition"
  ],
  "fields": [
   {
@@ -13,13 +25,79 @@
    "fieldname": "prevent_delivery_note_submission_without_printing_label",
    "fieldtype": "Check",
    "label": "Prevent delivery note submission without printing label"
+  },
+  {
+   "description": "<b>Test:</b>YKTEST",
+   "fieldname": "api_user_name",
+   "fieldtype": "Data",
+   "label": "API User Name"
+  },
+  {
+   "description": "<b>Test:</b>YK",
+   "fieldname": "api_password",
+   "fieldtype": "Password",
+   "label": "API Password"
+  },
+  {
+   "fieldname": "customer_code",
+   "fieldtype": "Data",
+   "label": "Customer Code"
+  },
+  {
+   "fieldname": "login_info_section",
+   "fieldtype": "Section Break",
+   "label": "Login Info"
+  },
+  {
+   "description": "<b>TEST:</b>http://testwebservices.yurticikargo.com:9090/KOPSWebServices/ShippingOrderDispatcherServices\n<br>\n<b>LIVE:</b>http://webservices.yurticikargo.com:8080/KOPSWebServices/ShippingOrderDispatcherServices",
+   "fieldname": "web_service_url",
+   "fieldtype": "Data",
+   "label": "Web Service URL"
+  },
+  {
+   "fieldname": "section_break_cqpq",
+   "fieldtype": "Section Break",
+   "label": "Settings"
+  },
+  {
+   "fieldname": "column_break_hjwd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "TR",
+   "description": "TR",
+   "fieldname": "user_language",
+   "fieldtype": "Data",
+   "label": "User Language"
+  },
+  {
+   "fieldname": "branch_code",
+   "fieldtype": "Data",
+   "label": "Branch Code"
+  },
+  {
+   "default": "0",
+   "fieldname": "create_shipment_for_each_delivery_note",
+   "fieldtype": "Check",
+   "label": "Create shipment for each delivery note"
+  },
+  {
+   "description": "ie: doc.delivery_type == \"Yurti\u00e7i Kargo\"",
+   "fieldname": "create_shipment_condition",
+   "fieldtype": "Data",
+   "label": "Create shipment condition"
+  },
+  {
+   "fieldname": "test_connection",
+   "fieldtype": "Button",
+   "label": "Test Connection"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-25 14:10:34.345405",
+ "modified": "2026-04-01 17:27:18.471405",
  "modified_by": "Administrator",
  "module": "Yurtici Kargo Erpnext",
  "name": "Yurtici Kargo Ayarlari",
