@@ -43,10 +43,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    "Pick List" : "public/js/pick_list.js",
-    "Delivery Note": "public/js/delivery_note.js"
-}
+doctype_js = {"Pick List": "public/js/pick_list.js", "Delivery Note": "public/js/delivery_note.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -141,9 +138,10 @@ doctype_js = {
 # Hook on document methods and events
 
 doc_events = {
-    "Delivery Note": {
-        "before_validate": "yurtici_kargo_erpnext.utils.dn_validate"
-    }
+	"Delivery Note": {
+		"validate": "yurtici_kargo_erpnext.utils.dn_validate",
+		"on_submit": "yurtici_kargo_erpnext.utils.dn_on_submit",
+	}
 }
 
 # doc_events = {
@@ -255,4 +253,3 @@ doc_events = {
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
