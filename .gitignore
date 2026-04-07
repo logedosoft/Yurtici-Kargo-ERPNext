@@ -1,7 +1,29 @@
-.DS_Store
+# Dependencies
+node_modules/
+
+# Git internals
+.git/
+
+# Python
+env/
+__pycache__/
 *.pyc
-*.egg-info
-*.swp
-tags
-node_modules
-__pycache__
+
+# Frappe/ERPNext
+sites/assets/
+sites/logs/
+apps/frappe/
+apps/erpnext/
+
+# Lock files
+*.lock
+
+# AI / Editor tools
+.kilo/
+.emdash/
+.emdash.json
+.claude/
+
+# Python tooling cache
+.ropeproject/
+.ruff_cache/
