@@ -447,28 +447,35 @@ def createShipment(dn_name, docYIKSettings=None):
 
 
 def dn_on_submit(doc, method=None):
-	"""
-	On submit hook for Delivery Note documents.
-	Creates a shipment with Yurtiçi Kargo API if delivery method is Yurtiçi Kargo.
-	"""
-	# Only process if delivery method is Yurtiçi Kargo
-	if doc.custom_ld_delivery_method == "Yurtiçi Kargo":
-		# Create shipment
-		result = createShipment(doc.name)
+	docYIKSettings = frappe.get_doc("Yurtici Kargo Ayarlari")
 
-		if result.op_result:
-			# Update Delivery Note with cargo key and job ID
-			frappe.db.set_value(
-				"Delivery Note",
-				doc.name,
-				{
-					"custom_ld_yik_cargo_key": result.data.get("cargo_key", ""),
-					"custom_ld_yik_job_id": result.data.get("job_id", "0"),
-				},
+	# Evaluate user-defined condition if set
+	if docYIKSettings.create_shipment_for_each_delivery_note and docYIKSettings.create_shipment_condition:
+		try:
+			condition_met = frappe.safe_eval(
+				docYIKSettings.create_shipment_condition,
+				eval_locals={"doc": doc}
 			)
-			frappe.msgprint(
-				_("Shipment created successfully. Cargo Key: {0}").format(result.data.get("cargo_key", ""))
+		except Exception as e:
+			frappe.throw(
+				_("Yurtiçi Kargo koşul ifadesi hatalı: {0}\n\nİfade: {1}").format(
+					str(e), docYIKSettings.create_shipment_condition
+				)
 			)
-		else:
-			# If shipment creation failed, prevent submission and show error
-			frappe.throw(_("Failed to create shipment: {0}").format(result.op_message))
+			return
+
+		if condition_met:
+			result = createShipment(doc.name)
+
+			if result.op_result:
+				frappe.db.set_value(
+					"Delivery Note",
+					doc.name,
+					{
+						"custom_ld_yik_cargo_key": result.data.get("cargo_key", ""),
+						"custom_ld_yik_job_id":    result.data.get("job_id", "0"),
+					},
+				)
+				doc.add_comment("Comment",  _("Yurtiçi Kargo gönderi oluşturuldu.<br><b>Cargo Key:</b> {0}<br><b>Job ID:</b> {1}").format(result.data.get("cargo_key", ""), result.data.get("job_id", "0")))
+			else:
+				frappe.throw(_("Kargo oluşturulamadı: {0}").format(result.op_message))
