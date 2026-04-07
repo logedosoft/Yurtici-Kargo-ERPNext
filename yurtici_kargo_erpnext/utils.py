@@ -121,6 +121,7 @@ def queryShipment(key, docYIKSettings=None):
 				cargo_key = detail_vo.find("cargoKey")
 				invoice_key = detail_vo.find("invoiceKey")
 				job_id = detail_vo.find("jobId")
+				doc_id = detail_vo.find("docId")
 				operation_code = detail_vo.find("operationCode")
 				operation_message = detail_vo.find("operationMessage")
 				operation_status = detail_vo.find("operationStatus")
@@ -136,6 +137,7 @@ def queryShipment(key, docYIKSettings=None):
 					"cargo_key": cargo_key.text if cargo_key else "",
 					"invoice_key": invoice_key.text if invoice_key else "",
 					"job_id": job_id.text if job_id else "0",
+					"doc_id": doc_id.text if doc_id else "",
 					"operation_code": operation_code.text if operation_code else "",
 					"operation_message": operation_message.text if operation_message else "",
 					"operation_status": operation_status.text if operation_status else "",
@@ -155,6 +157,58 @@ def queryShipment(key, docYIKSettings=None):
 
 	return dctResult
 
+def sync_shipment_statuses():
+	"""
+	Scheduled job (hourly): polls queryShipment for Delivery Notes pending a final status.
+	Final statuses: DLV (delivered), CNL (cancelled), ISC (already cancelled).
+	Note: YK rejects repeated queries for the same key within 1 minute.
+	"""
+	FINAL_STATUSES = ("DLV", "CNL", "ISC")
+
+	pending = frappe.get_all(
+		"Delivery Note",
+		filters={
+			"custom_ld_yik_cargo_key": ["!=", ""],
+			"custom_ld_yik_operation_status": ["not in", FINAL_STATUSES],
+			"docstatus": 1,
+		},
+		fields=["name", "custom_ld_yik_cargo_key"],
+		limit=50,
+	)
+
+	if pending:
+		docYIKSettings = frappe.get_doc("Yurtici Kargo Ayarlari")
+
+		for dn in pending:
+			try:
+				result = queryShipment(dn.custom_ld_yik_cargo_key, docYIKSettings)
+
+				if result.op_result and result.get("data"):
+					data    = result.data
+					doc_id  = data.get("doc_id", "")
+					new_status = data.get("operation_status", "")
+
+					docDN = frappe.get_doc("Delivery Note", dn.name)
+
+					# Only save (and trigger webhook) if something actually changed
+					blnStatusChanged = docDN.custom_ld_yik_operation_status != new_status
+					blnDocIdChanged = doc_id and doc_id != "0" and docDN.custom_ld_yik_doc_id != doc_id
+
+					if blnStatusChanged or blnDocIdChanged:
+						docDN.custom_ld_yik_operation_status = new_status
+						if blnDocIdChanged:
+							docDN.custom_ld_yik_doc_id = doc_id
+							docDN.add_comment("Info",
+								_("Yurtiçi Kargo takip numarası alındı.<br>"
+								  "<b>Takip No (docId):</b> {0}<br>"
+								  "<b>Durum:</b> {1}").format(doc_id, data.get("operation_message", ""))
+							)
+						docDN.save(ignore_permissions=True)
+
+			except Exception:
+				frappe.log_error("YIK Sync Failed", f"Delivery Note={dn.name}\nTraceback:" + frappe.get_traceback())
+	
+	frappe.log_error("YIK Sync Finished", f"Pending Count={len(pending)}\nProcessed DNs={pending}")
 
 def _get_customer_phone(customer):
 	"""
@@ -188,7 +242,6 @@ def _get_customer_phone(customer):
 	except Exception:
 		return ""
 
-
 def _format_phone(raw):
 	"""
 	Normalize phone number to 11-digit Turkish format.
@@ -219,7 +272,6 @@ def _format_phone(raw):
 
 	return digits
 
-
 def dn_validate(doc, method):
 	"""
 	Validation hook for Delivery Note documents.
@@ -229,14 +281,17 @@ def dn_validate(doc, method):
 	# Only validate on submit, not on draft saves
 	if doc.docstatus == 1:
 		# Validate that delivery method is set (it's a required field)
-		if doc.custom_ld_delivery_method == "Yurtiçi Kargo":
-			# Check if prevention of submission without printing label is enabled
-			settings = frappe.get_single("Yurtici Kargo Ayarlari")
-			if settings.prevent_delivery_note_submission_without_printing_label:
+		docYIKSettings = frappe.get_single("Yurtici Kargo Ayarlari")
+		if docYIKSettings.prevent_delivery_note_submission_without_printing_label and docYIKSettings.create_shipment_condition:
+			try:
+				condition_met = frappe.safe_eval(docYIKSettings.create_shipment_condition, eval_locals={"doc": doc})
+			except Exception as e:
+				frappe.throw(_("Yurtiçi Kargo koşul ifadesi hatalı: {0}\n\nİfade: {1}").format(str(e), docYIKSettings.create_shipment_condition))
+			
+			if condition_met:
 				# Check if label has been printed
 				if not doc.custom_ld_yik_print_count or doc.custom_ld_yik_print_count == 0:
 					frappe.throw(_("Önce Kargo etiketi yazdırın!"))
-
 
 def createShipment(dn_name, docYIKSettings=None):
 	"""
@@ -257,11 +312,6 @@ def createShipment(dn_name, docYIKSettings=None):
 	try:
 		# Get Delivery Note document
 		dn = frappe.get_doc("Delivery Note", dn_name)
-
-		# Check if this is for Yurtiçi Kargo
-		if dn.custom_ld_delivery_method != "Yurtiçi Kargo":
-			dctResult.op_message = "Delivery Note is not for Yurtiçi Kargo"
-			return dctResult
 
 		# Get settings if not provided
 		if docYIKSettings is None:
@@ -462,7 +512,6 @@ def dn_on_submit(doc, method=None):
 					str(e), docYIKSettings.create_shipment_condition
 				)
 			)
-			return
 
 		if condition_met:
 			result = createShipment(doc.name)
