@@ -408,34 +408,31 @@ def createShipment(dn_name, docYIKSettings=None):
 
 		# Check for valid response (outFlag=0)
 		if out_flag_value == "0":
-			# Extract cargoKey and jobId from ShippingOrderDetailVO
-			detail_vo = shipping_order_result_vo.find("shippingOrderDetailVO")
+			# jobId lives at ShippingOrderResultVO level, not inside shippingOrderDetailVO
+			job_id_node = shipping_order_result_vo.find("jobId")
+			job_id_value = job_id_node.text if job_id_node else "0"
+
+			detail_vo = shipping_order_result_vo.find("shippingOrderDetailVO")  # lowercase s
 
 			if detail_vo:
-				cargo_key = detail_vo.find("cargoKey")
-				job_id = detail_vo.find("jobId")
+				cargo_key_node   = detail_vo.find("cargoKey")
+				invoice_key_node = detail_vo.find("invoiceKey")
 
-				dctResult.op_result = True
+				dctResult.op_result  = True
 				dctResult.op_message = out_result_value
 				dctResult.data = {
-					"cargo_key": cargo_key.text if cargo_key else "",
-					"job_id": job_id.text if job_id else "0",
+					"cargo_key":   cargo_key_node.text   if cargo_key_node   else dn_name_truncated,
+					"invoice_key": invoice_key_node.text if invoice_key_node else dn_name_truncated,
+					"job_id":      job_id_value,
 				}
-
-				# Also extract other details if needed
-				invoice_key = detail_vo.find("invoiceKey")
-				waybill_no = detail_vo.find("waybillNo")
-				fee = detail_vo.find("fee")
-
-				if invoice_key:
-					dctResult.data["invoice_key"] = invoice_key.text
-				if waybill_no:
-					dctResult.data["waybill_no"] = waybill_no.text
-				if fee:
-					dctResult.data["fee"] = fee.text
 			else:
-				dctResult.op_result = True
+				dctResult.op_result  = True
 				dctResult.op_message = out_result_value
+				dctResult.data = {
+					"cargo_key":   dn_name_truncated,
+					"invoice_key": dn_name_truncated,
+					"job_id":      job_id_value,
+				}
 		else:
 			dctResult.op_message = (
 				f"Unexpected response: outFlag={out_flag_value}, outResult={out_result_value}"
