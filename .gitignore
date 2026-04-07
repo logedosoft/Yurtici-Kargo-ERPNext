@@ -27,4 +27,3 @@ apps/erpnext/
 # Python tooling cache
 .ropeproject/
 .ruff_cache/
-.emdash.json

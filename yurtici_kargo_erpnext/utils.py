@@ -1,8 +1,8 @@
 # Copyright (c) 2025, Logedosoft Business Solutions and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
+import frappe, json
+from frappe import msgprint, _
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -49,18 +49,18 @@ def queryShipment(key, docYIKSettings = None):
         docYIKSettings = frappe.get_doc("Yurtici Kargo Ayarlari")
     
     # Get password using get_password method
-    password = docYIKSettings.get_password('api_password')
+    docYIKSettings.api_password = docYIKSettings.get_password('api_password')
     
     # Build SOAP request
-    soap_request = f'''<?xml version="1.0" encoding="utf-8"?>
+    soap_request = '''<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ship="http://yurticikargo.com.tr/ShippingOrderDispatcherServices">
    <soapenv:Header/>
    <soapenv:Body>
       <ship:queryShipment>
-         <wsUserName>{docYIKSettings.api_user_name}</wsUserName>
-         <wsPassword>{password}</wsPassword>
-         <wsLanguage>{docYIKSettings.user_language}</wsLanguage>
-         <keys>{key}</keys>
+         <wsUserName>{{ docYIKSettings.api_user_name }}</wsUserName>
+         <wsPassword>{{ docYIKSettings.api_password }}</wsPassword>
+         <wsLanguage>{{ docYIKSettings.user_language }}</wsLanguage>
+         <keys>{{ key }}</keys>
          <keyType>0</keyType>
          <addHistoricalData>false</addHistoricalData>
          <onlyTracking>false</onlyTracking>
@@ -69,6 +69,10 @@ def queryShipment(key, docYIKSettings = None):
 </soapenv:Envelope>'''
     
     try:
+        frappe.log_error("L1", soap_request)
+        soap_request = frappe.render_template(soap_request, context={"docYIKSettings": docYIKSettings, "key": key}, is_path=False)
+        frappe.log_error("L2", soap_request)
+
         # Send SOAP request
         headers = {
             'Content-Type': 'text/xml; charset=utf-8',
