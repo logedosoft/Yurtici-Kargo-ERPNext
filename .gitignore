@@ -21,8 +21,10 @@ apps/erpnext/
 # AI / Editor tools
 .kilo/
 .emdash/
+.emdash.json
 .claude/
 
 # Python tooling cache
 .ropeproject/
 .ruff_cache/
+.emdash.json
